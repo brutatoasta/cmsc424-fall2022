@@ -15,7 +15,10 @@ order by Id asc;
 ### Output column order: Id, Title, Tags
 ### Order by Id ascending
 queries[1] = """
-select 0;
+select Id, Title, Tags
+from posts
+where Tags like '%<postgresql-9.4>%'
+order by Id asc;
 """
 
 
@@ -26,7 +29,10 @@ select 0;
 ### Output columns: Id, DisplayName, Num_years
 ### Order output by Num_years increasing, and then by Id ascending
 queries[2] = """
-select 0;
+select Id, DisplayName, date_part('year', age(timestamp '2022-09-01', CreationDate) )as Num_years
+from users
+where DisplayName = 'Jason'
+order by Num_years asc, Id desc;
 """
 
 ### 3. Select all the "distinct" years that users with names starting with 'M'
@@ -34,7 +40,10 @@ select 0;
 ### Output column: Year
 ### Order output by Year ascending
 queries[3] = """
-select 0;
+select distinct date_part('year', CreationDate) as Year
+from users
+where DisplayName like 'M%'
+order by Year asc;
 """
 
 ### 4. Write a query to find users who have, on average, given at least 1 UpVote per
@@ -44,15 +53,23 @@ select 0;
 ### have provided 1 UpVote to make it into the result)
 ### Output columns: Id, DisplayName, CreationDate, UpVotes
 ### Order by Id ascending
+# theres rows with 0  upvotes and 0 days
 queries[4] = """
-select 0;
+select Id, DisplayName, CreationDate, UpVotes
+from users
+where Upvotes > 0 and date_part( 'day', age(timestamp '2022-09-01', CreationDate)) > 0 and UpVotes /floor( date_part( 'day', age(timestamp '2022-09-01', CreationDate))) >= 1
+order by Id asc;
 """
 
 ### 5. Write a single query to report all Badges for the users with reputation between 10000 and 11000, by joining Users and Badges.
 ### Output Column: Id (from Users), DisplayName, Name (from Badges), Reputation
 ### Order by: Id increasing
 queries[5] = """
-select 0;
+select users.Id as Id, DisplayName, badges.Name as Name, Reputation
+from users, badges 
+where Reputation >= 10000 and Reputation <= 11000
+
+order by Id asc;
 """
 
 ### 6. Write a query to find all Posts who satisfy one of the following conditions:
@@ -62,14 +79,21 @@ select 0;
 ### Output columns: Id, Title, ViewCount
 ### Order by: Id ascending
 queries[6] = """
-select 0;
+select Id, Title, ViewCount
+from posts
+where (Title like '%postgres%' and ViewCount >= 50000) or (Title like '%mongodb%' and ViewCount >= 25000)
+order by Id asc;
 """
 
 
 ### 7. Count the number of the Comments made by the user with DisplayName 'JHFB'.
 ### Output columns: Num_Comments
 queries[7] = """
-select 0;
+select count(*) as Num_Comments
+from comments 
+where UserId in (select Id
+from users
+where DisplayName = 'JHFB');
 """
 
 ### 8. Find the Users who have received badges with names: "Guru" and "Curious". 
@@ -78,7 +102,14 @@ select 0;
 ### Output columns: UserId
 ### Order by: UserId ascending
 queries[8] = """
-select 0;
+(select UserId
+from badges
+where Name = 'Guru' )
+intersect
+(select UserId
+from badges
+where Name = 'Curious')
+order by UserId asc;
 """
 
 ### 9. "Tags" field in Posts lists out the tags associated with the post in the format "<tag1><tag2>..<tagn>".
@@ -87,7 +118,11 @@ select 0;
 ### Output columns: Id, Title, Tags
 ### Order by: Id ascending
 queries[9] = """
-select 0;
+select Id, Title, Tags
+from posts
+group by Id
+having Tags like '%<postgresql>%' and cardinality(string_to_array(Tags, '><')) >= 6
+order by Id asc;
 """
 
 
@@ -101,6 +136,21 @@ select 0;
 ### Output columns: Id, DisplayName, Num_Comments
 ### Order by Id ascending (there may be more than one answer)
 queries[10] = """
+with c as (
+select UserId, count(*) as Num_Comments
+from comments
+group by UserId)
+select UserId as Id, DisplayName, Num_Comments
+from c, users
+where Num_Comments = (
+    select max (Num_Comments)
+    from c
+) and c.UserId = users.Id
+order by c.UserId asc;
+"""
+
+# from prof start
+"""
 with temp as (
         select Users.Id, DisplayName, count(*) as num_Comments 
         from users, comments 
@@ -108,13 +158,19 @@ with temp as (
         group by users.id, users.displayname)
 select 0;
 """
+# end
 
 ### 11. List the users who posted no comments and with at least 500 views. 
 ### Hint: Use "not in".
 ### Output Columns: Id, DisplayName
 ### Order by Id ascending
 queries[11] = """
-select 0;
+select Id, DisplayName
+from users
+where Views >= 500 and Id not in
+(select UserId
+from comments)
+order by Id asc;
 """
 
 
@@ -123,8 +179,41 @@ select 0;
 ### in the output.
 ### Output: Id (Posts), Title, Text (Comments)
 ### Order by: Id ascending
-queries[12] = """
-select 0;
+queries[12] ="""
+select posts.id, posts.title, comments.text
+from posts, comments
+where posts.posttypeid = (
+        select PostTypeId
+        from PostTypes
+        where Description = 'Moderator nomination'
+    )
+    and comments.score >= 10 and comments.postid = posts.id
+order by posts.id asc;
+"""
+
+"""
+with p as (
+    select Title, Id as PostId
+    from posts
+    where PostTypeId = (
+        select PostTypeId
+        from PostTypes
+        where Description = 'Moderator nomination'
+    )
+),
+c as (
+    select PostId , Text
+    from comments
+    where score = (
+        select score
+        from comments
+        where score >= 10
+    )
+)
+select p.PostId as Id, p.Title as Title, c.text as Text
+from p, c
+where p.PostId = c.PostId
+order by Id asc;
 """
 
 
@@ -135,7 +224,11 @@ select 0;
 ### Order by Badge_name asc
 ### Use LIMIT to limit the output to first 20 rows.
 queries[13] = """
-select 0;
+select name as badge_name, count(userid) as num_users
+from (select distinct name , userid from badges) as foo
+group by badge_name
+order by badge_name asc
+limit 20;
 """
 
 ### 14. For each post, count the number of comments for that post.
@@ -153,7 +246,10 @@ select 0;
 ### Output Columns: Id, Num_Comments
 ### Order by: Id ascending
 queries[14] = """
-select 0;
+select posts.id as id, count(comments.id) as num_comments
+from posts left outer join comments on ( posts.id = comments.postid)
+group by posts.id
+order by posts.id asc;
 """
 
 
@@ -170,7 +266,9 @@ select 0;
 ### Output columns: Reputation, Num_users
 ### Order by Reputation ascending
 queries[15] = """
-select 0;
+select * as r
+from generate_series(1,100)
+
 """
 
 
