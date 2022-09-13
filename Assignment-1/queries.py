@@ -53,23 +53,24 @@ order by Year asc;
 ### have provided 1 UpVote to make it into the result)
 ### Output columns: Id, DisplayName, CreationDate, UpVotes
 ### Order by Id ascending
-# theres rows with 0  upvotes and 0 days
+# theres rows with 0  upvotes and 0 days 
+# i need fewer rows
 queries[4] = """
 select Id, DisplayName, CreationDate, UpVotes
 from users
-where Upvotes > 0 and date_part( 'day', age(timestamp '2022-09-01', CreationDate)) > 0 and UpVotes /floor( date_part( 'day', age(timestamp '2022-09-01', CreationDate))) >= 1
+where Upvotes > 0 and date_part( 'day', '2022-09-01'::timestamp - CreationDate) > 0 and UpVotes / date_part( 'day', '2022-09-01'::timestamp - CreationDate) >= 1
 order by Id asc;
 """
 
 ### 5. Write a single query to report all Badges for the users with reputation between 10000 and 11000, by joining Users and Badges.
 ### Output Column: Id (from Users), DisplayName, Name (from Badges), Reputation
 ### Order by: Id increasing
+# i need fewer rows
 queries[5] = """
-select users.Id as Id, DisplayName, badges.Name as Name, Reputation
+select users.id as id, displayname, badges.name as name, reputation
 from users, badges 
-where Reputation >= 10000 and Reputation <= 11000
-
-order by Id asc;
+where reputation >= 10000 and reputation <= 11000 and users.id = badges.userid
+order by id asc;
 """
 
 ### 6. Write a query to find all Posts who satisfy one of the following conditions:
@@ -78,10 +79,11 @@ order by Id asc;
 ### The match should be case insensitive
 ### Output columns: Id, Title, ViewCount
 ### Order by: Id ascending
+# i need more rows
 queries[6] = """
 select Id, Title, ViewCount
 from posts
-where (Title like '%postgres%' and ViewCount >= 50000) or (Title like '%mongodb%' and ViewCount >= 25000)
+where (Title ilike '%postgres%' and ViewCount >= 50000) or (Title ilike '%mongodb%' and ViewCount >= 25000)
 order by Id asc;
 """
 
@@ -191,32 +193,6 @@ where posts.posttypeid = (
 order by posts.id asc;
 """
 
-"""
-with p as (
-    select Title, Id as PostId
-    from posts
-    where PostTypeId = (
-        select PostTypeId
-        from PostTypes
-        where Description = 'Moderator nomination'
-    )
-),
-c as (
-    select PostId , Text
-    from comments
-    where score = (
-        select score
-        from comments
-        where score >= 10
-    )
-)
-select p.PostId as Id, p.Title as Title, c.text as Text
-from p, c
-where p.PostId = c.PostId
-order by Id asc;
-"""
-
-
 ### 13. Generate a list - (Badge_Name, Num_Users) - containing the different
 ### badges, and the number of users who received those badges.
 ### Note: A user may receive the same badge multiple times -- they should only be counted once for that badge.
@@ -266,9 +242,10 @@ order by posts.id asc;
 ### Output columns: Reputation, Num_users
 ### Order by Reputation ascending
 queries[15] = """
-select * as r
-from generate_series(1,100)
-
+select r as reputation, count(users.id) as num_users
+from generate_series(1,100) as g(r) left outer join users on(r = users.reputation)
+group by r
+order by r asc
 """
 
 
@@ -281,7 +258,11 @@ from generate_series(1,100)
 ### Output Columns: Id, Num_Comments, Num_Votes
 ### Order by: Id ascending
 queries[16] = """
-select 0;
+select posts.id as id, count(comments.id) as num_comments, count(votes.id) as num_votes
+from posts left outer join comments on (posts.id = comments.userid)
+left outer join votes on (posts.id = votes.userid)
+group by posts.id
+order by id asc;
 """
 
 ### 17. Write a query to find the posts with at least 7 children (i.e., at
