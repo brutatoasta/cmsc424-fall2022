@@ -270,8 +270,15 @@ order by id asc;
 ###
 ### Output columns: Id, Title
 ### Order by: Id ascending
-queries[17] = """
-select 0;
+queries[17] = """with p as (select parentid, count(parentid)
+from posts
+group by parentid
+having count(parentid) >=7)
+select posts.id as id, posts.title as title
+from posts, p
+where posts.id = p.parentid
+group by posts.id
+order by posts.id asc;
 """
 
 ### 18. Find posts such that, between the post and its children (i.e., answers
@@ -281,9 +288,40 @@ select 0;
 ###
 ### Output columns: Id, Title
 ### Order by: Id ascending
-queries[18] = """
-select 0;
+
+# Approach:
+# get the vote counts for each post within votes table as v
+# sum up the vote counts for each parentid in posts
+queries[18] = """with v as (select postid, count(postid) as vote_count
+from votes
+group by postid),
+w as (
+select posts.parentid, sum(v.vote_count) as total
+from posts right outer join v on (v.postid = posts.parentid)
+group by posts.parentid)
+select posts.id, posts.title
+from posts, w, v
+where posts.id= v.postid and v.vote_count + w.total >= 100
+group by posts.id
+order by posts.id;
 """
+"""
+w as(
+    select v.postid as id, posts.title as title, posts.parentid as parentid, v.vote_count as count
+from posts right outer join v on (v.postid = posts.id)
+group by v.postid, posts.title, v.vote_count
+order by v.postid asc)
+select w.id, w.title
+from w, posts
+where 
+
+
+
+select postid, count(postid) as vote_count
+from votes
+group by postid
+order by postid asc;"""
+# w as (select parentid as id from posts union all select id from posts)
 
 ### 19. Write a query to find posts where the post and the accepted answer
 ### are both owned by the same user (i.e., have the same "OwnerUserId") and the
@@ -294,7 +332,15 @@ select 0;
 ### Output columns: Id, Title
 ### Order by: Id Ascending
 queries[19] = """
-select 0;
+with p as (
+    select owneruserid,
+    from posts
+    where postypeid = 1
+
+select id, title
+from posts
+where owneruserid = acceptedanswerid 
+order by id asc;
 """
 
 ### 20. Write a query to generate a table: 
