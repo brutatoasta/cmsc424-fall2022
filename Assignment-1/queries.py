@@ -66,12 +66,19 @@ order by Id asc;
 ### Output Column: Id (from Users), DisplayName, Name (from Badges), Reputation
 ### Order by: Id increasing
 # i need fewer rows
-queries[5] = """
+queries[5] ="""
+select users.id as id, displayname, badges.name as name, reputation
+from users join badges on (reputation >= 10000 and reputation <= 11000 and users.id = badges.userid)
+order by id asc;
+"""
+# without join
+"""
 select users.id as id, displayname, badges.name as name, reputation
 from users, badges 
 where reputation >= 10000 and reputation <= 11000 and users.id = badges.userid
 order by id asc;
 """
+
 
 ### 6. Write a query to find all Posts who satisfy one of the following conditions:
 ###        - the post title contains 'postgres' and the number of views is at least 50000
@@ -124,7 +131,7 @@ select Id, Title, Tags
 from posts
 group by Id
 having Tags like '%<postgresql>%' and cardinality(string_to_array(Tags, '><')) >= 6
-order by Id asc;
+order by Id asc;lkdfg
 """
 
 
@@ -257,6 +264,8 @@ order by r asc
 ###
 ### Output Columns: Id, Num_Comments, Num_Votes
 ### Order by: Id ascending
+
+# Right number of rows and columns in the result, but unable to match to the correct answer
 queries[16] = """
 select posts.id as id, count(comments.id) as num_comments, count(votes.id) as num_votes
 from posts left outer join comments on (posts.id = comments.userid)
