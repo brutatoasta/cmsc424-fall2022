@@ -364,5 +364,8 @@ order by id asc;
 ### Output column order: VoteTypeDescription, Day_of_Week, Num_Votes
 ### Order by VoteTypeDescription asc, Day_of_Week asc
 queries[20] = """
-select 0;
+select description as votetypedescription, extract(dow from CreationDate) as day_of_week, count(id) as num_votes
+from votes, votetypes
+group by description, creationdate
+order by votetypedescription asc, day_of_week asc;
 """
