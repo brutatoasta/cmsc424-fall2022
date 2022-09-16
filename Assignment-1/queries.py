@@ -131,7 +131,7 @@ select Id, Title, Tags
 from posts
 group by Id
 having Tags like '%<postgresql>%' and cardinality(string_to_array(Tags, '><')) >= 6
-order by Id asc;lkdfg
+order by Id asc;
 """
 
 
@@ -267,10 +267,15 @@ order by r asc
 
 # Right number of rows and columns in the result, but unable to match to the correct answer
 queries[16] = """
-select posts.id as id, count(comments.id) as num_comments, count(votes.id) as num_votes
-from posts left outer join comments on (posts.id = comments.userid)
-left outer join votes on (posts.id = votes.userid)
-group by posts.id
+with pc(id, num_comments) as (
+    select posts.id as id, count(comments.id) as num_comments
+    from posts left outer join comments on (posts.id = comments.postid)
+    group by posts.id
+    order by id asc
+)
+select pc.id as id, pc.num_comments as num_comments, count(votes.id) as num_votes
+from pc left outer join votes on (pc.id = votes.postid)
+group by pc.id, pc.num_comments
 order by id asc;
 """
 
@@ -305,15 +310,16 @@ queries[18] = """with v as (select postid, count(postid) as vote_count
 from votes
 group by postid),
 w as (
-select posts.parentid, sum(v.vote_count) as total
-from posts right outer join v on (v.postid = posts.parentid)
+select posts.parentid as family, sum(v.vote_count) as total
+from posts join v on (v.postid = posts.parentid)
 group by posts.parentid)
 select posts.id, posts.title
 from posts, w, v
-where posts.id= v.postid and v.vote_count + w.total >= 100
+where posts.id= w.family and v.vote_count + w.total >= 100
 group by posts.id
-order by posts.id;
+order by posts.id asc;
 """
+# W as vote count sum of children
 """
 w as(
     select v.postid as id, posts.title as title, posts.parentid as parentid, v.vote_count as count
@@ -323,9 +329,10 @@ order by v.postid asc)
 select w.id, w.title
 from w, posts
 where 
+"""
 
-
-
+# get vote_count as v
+"""
 select postid, count(postid) as vote_count
 from votes
 group by postid
@@ -340,17 +347,26 @@ order by postid asc;"""
 ###
 ### Output columns: Id, Title
 ### Order by: Id Ascending
-queries[19] = """
-with p as (
-    select owneruserid,
-    from posts
-    where postypeid = 1
 
-select id, title
-from posts
-where owneruserid = acceptedanswerid 
-order by id asc;
+# p is a copy of posts
+# o is posts where they only have 2 of the same owners ( the post and the answer)
+
+queries[19] = """
+    with p as (select *
+    from posts),
+    o as (select owneruserid, count(owneruserid)
+    from posts
+    group by owneruserid
+    having count(owneruserid)  = 2
+    order by owneruserid asc)
+
+    select p.id, p.title
+    from posts,p, o
+    where posts.id = p.acceptedanswerid and posts.owneruserid = p.owneruserid and o.owneruserid = p.owneruserid
+    group by p.id, p.title
+    order by p.id asc;
 """
+
 
 ### 20. Write a query to generate a table: 
 ### (VoteTypeDescription, Day_of_Week, Num_Votes)
@@ -364,8 +380,19 @@ order by id asc;
 ### Output column order: VoteTypeDescription, Day_of_Week, Num_Votes
 ### Order by VoteTypeDescription asc, Day_of_Week asc
 queries[20] = """
-select description as votetypedescription, extract(dow from CreationDate) as day_of_week, count(id) as num_votes
+with t as(select votes.votetypeid as vtid, extract(dow from CreationDate) as day_of_week
+from votes, votetypes)
+select description, t.day_of_week, count(votes.id) as num_votes
+from votetypes, t, votes
+where t.vtid = votes.votetypeid and t.day_of_week = extract(dow from votes.CreationDate)
+group by description, t.day_of_week
+order by description asc, t.day_of_week asc;
+"""
+
+
+#gets the correct description and dow
+"""select description, extract(dow from CreationDate) as day_of_week, count(id) as num_votes
 from votes, votetypes
-group by description, creationdate
-order by votetypedescription asc, day_of_week asc;
+group by description, day_of_week
+order by description asc, day_of_week asc;
 """
