@@ -54,7 +54,6 @@ order by Year asc;
 ### Output columns: Id, DisplayName, CreationDate, UpVotes
 ### Order by Id ascending
 # theres rows with 0  upvotes and 0 days 
-# i need fewer rows
 queries[4] = """
 select Id, DisplayName, CreationDate, UpVotes
 from users
@@ -65,12 +64,12 @@ order by Id asc;
 ### 5. Write a single query to report all Badges for the users with reputation between 10000 and 11000, by joining Users and Badges.
 ### Output Column: Id (from Users), DisplayName, Name (from Badges), Reputation
 ### Order by: Id increasing
-# i need fewer rows
 queries[5] ="""
 select users.id as id, displayname, badges.name as name, reputation
 from users join badges on (reputation >= 10000 and reputation <= 11000 and users.id = badges.userid)
 order by id asc;
 """
+
 # without join
 """
 select users.id as id, displayname, badges.name as name, reputation
@@ -79,21 +78,18 @@ where reputation >= 10000 and reputation <= 11000 and users.id = badges.userid
 order by id asc;
 """
 
-
 ### 6. Write a query to find all Posts who satisfy one of the following conditions:
 ###        - the post title contains 'postgres' and the number of views is at least 50000
 ###        - the post title contains 'mongodb' and the number of views is at least 25000
 ### The match should be case insensitive
 ### Output columns: Id, Title, ViewCount
 ### Order by: Id ascending
-# i need more rows
 queries[6] = """
 select Id, Title, ViewCount
 from posts
 where (Title ilike '%postgres%' and ViewCount >= 50000) or (Title ilike '%mongodb%' and ViewCount >= 25000)
 order by Id asc;
 """
-
 
 ### 7. Count the number of the Comments made by the user with DisplayName 'JHFB'.
 ### Output columns: Num_Comments
@@ -255,7 +251,6 @@ group by r
 order by r asc
 """
 
-
 ### 16. Generalizing #14 above, associate posts with both the number of
 ### comments and the number of votes
 ### 
@@ -308,27 +303,46 @@ order by posts.id asc;
 # sum up the vote counts for each parentid in posts
 queries[18] = """with v as (select postid, count(postid) as vote_count
 from votes
-group by postid),
-w as (
-select posts.parentid as family, sum(v.vote_count) as total
-from posts join v on (v.postid = posts.parentid)
-group by posts.parentid)
-select posts.id, posts.title
+group by postid), 
+
+u as (select distinct parentid
+from posts
+where parentid is not null)
+
+select u.parentid, v.vote_count as total
+from u, v, posts
+where v.postid = posts.id
+group by u.parentid, v.vote_count
+order by u.parentid asc;
+"""
+
+
+
+"""with v as (select postid, count(postid) as vote_count
+from votes
+group by postid), 
+
+u as (select distinct parentid
+from posts
+where parentid is not null),
+
+w as (select u.parentid as id, sum(v.vote_count) as total
+from u, v
+where v.postid = u.parentid
+group by u.parentid)
+
+select w.id, posts.title, v.vote_count + w.total as grand
 from posts, w, v
-where posts.id= w.family and v.vote_count + w.total >= 100
-group by posts.id
-order by posts.id asc;
+where v.vote_count + w.total >= 100 and posts.id = w.id and v.postid = w.id 
+group by w.id, posts.title, grand
+order by w.id asc;
 """
-# W as vote count sum of children
-"""
-w as(
-    select v.postid as id, posts.title as title, posts.parentid as parentid, v.vote_count as count
-from posts right outer join v on (v.postid = posts.id)
-group by v.postid, posts.title, v.vote_count
-order by v.postid asc)
-select w.id, w.title
-from w, posts
-where 
+
+# get parents as u
+"""select distinct parentid
+from posts
+where parentid is not null
+order by parentid asc;
 """
 
 # get vote_count as v
@@ -337,6 +351,40 @@ select postid, count(postid) as vote_count
 from votes
 group by postid
 order by postid asc;"""
+
+# get w as vote count sum of children
+"""with v as (select postid, count(postid) as vote_count
+from votes
+group by postid), 
+
+u as (select distinct parentid
+from posts
+where parentid is not null
+order by parentid asc)
+
+select u.parentid, sum(v.vote_count) as total
+from u, v, posts
+where posts.parentid = u.parentid
+group by u.parentid
+order by u.parentid asc;
+"""
+
+# get x as vote count of parents
+"""with v as (select postid, count(postid) as vote_count
+from votes
+group by postid), 
+
+u as (select distinct parentid
+from posts
+where parentid is not null
+order by parentid asc)
+
+select u.parentid, v.vote_count
+from u, v
+where v.postid = u.parentid
+group by u.parentid, v.vote_count
+order by u.parentid asc;
+"""
 # w as (select parentid as id from posts union all select id from posts)
 
 ### 19. Write a query to find posts where the post and the accepted answer
@@ -367,7 +415,6 @@ queries[19] = """
     order by p.id asc;
 """
 
-
 ### 20. Write a query to generate a table: 
 ### (VoteTypeDescription, Day_of_Week, Num_Votes)
 ### where we count the number of votes corresponding to each combination
@@ -379,16 +426,14 @@ queries[19] = """
 ###
 ### Output column order: VoteTypeDescription, Day_of_Week, Num_Votes
 ### Order by VoteTypeDescription asc, Day_of_Week asc
+# mine
 queries[20] = """
-with t as(select votes.votetypeid as vtid, extract(dow from CreationDate) as day_of_week
-from votes, votetypes)
-select description, t.day_of_week, count(votes.id) as num_votes
-from votetypes, t, votes
-where t.vtid = votes.votetypeid and t.day_of_week = extract(dow from votes.CreationDate)
-group by description, t.day_of_week
-order by description asc, t.day_of_week asc;
+select vt.description as d, extract(dow from v.CreationDate) as day_of_week, count(v.id) as num_votes
+from votes v, votetypes vt 
+where vt.votetypeid = v.votetypeid
+group by d, day_of_week
+order by d asc, day_of_week asc;
 """
-
 
 #gets the correct description and dow
 """select description, extract(dow from CreationDate) as day_of_week, count(id) as num_votes
