@@ -24,7 +24,10 @@ order by Id asc;
 ### See: https://www.postgresql.org/docs/current/datatype-enum.html if you are
 ### unsure how to use the enum type
 queries[1] = """
-select 0;
+alter table PostsCopy
+add age integer,
+add ownerdisplayname varchar(50),
+add popularity popularityscale;
 """
 
 ### 2 [0.5]. Write a single query/statement to set the values of the new columns. 
@@ -42,13 +45,38 @@ select 0;
 ### https://www.postgresql.org/docs/current/sql-update.html has examples at the
 ### bottom to show how to update multiple columns in the same query
 queries[2] = """
-select 0;
+update PostsCopy set age =  date_part('year', age(timestamp '2022-09-01', CreationDate) 
+
+ownerdisplayname, popularity) = (
+    date_part('year', age(timestamp '2022-09-01', CreationDate) ),
+    displayname from users where users.id == postscopy.owneruserid,
+    
+    case
+        when viewcount >=20000
+            then High::popularityscale
+        when viewcount > 10000 and viewcount <20000
+            then Medium::popularityscale
+        when viewcount <=10000
+            then Low::popularityscale  );
+""" """
+update PostsCopy set (age, ownerdisplayname, popularity) = (
+    date_part('year', age(timestamp '2022-09-01', CreationDate) ),
+    displayname from users where users.id == postscopy.owneruserid,
+    
+    case
+        when viewcount >=20000
+            then High::popularityscale
+        when viewcount > 10000 and viewcount <20000
+            then Medium::popularityscale
+        when viewcount <=10000
+            then Low::popularityscale  );
 """
 
 
 ### 3 [0.25]. Write a query "delete" all Posts from PostsCopy where tags is null.
 queries[3] = """
-select 0;
+delete from postscopy
+where tags is null ;
 """
 
 ### 4 [0.5]. Use "generate_series" to write a single statement to insert 10 new tuples
