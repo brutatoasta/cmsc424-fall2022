@@ -1,0 +1,3 @@
+q6,7 right num of rows
+q9 runtime error
+left 10-12

@@ -24,9 +24,9 @@ order by Id asc;
 ### See: https://www.postgresql.org/docs/current/datatype-enum.html if you are
 ### unsure how to use the enum type
 queries[1] = """
-alter table PostsCopy
+alter table postscopy
 add age integer,
-add ownerdisplayname varchar(50),
+add ownerdisplayname varchar(40),
 add popularity popularityscale;
 """
 
@@ -44,32 +44,38 @@ add popularity popularityscale;
 ###
 ### https://www.postgresql.org/docs/current/sql-update.html has examples at the
 ### bottom to show how to update multiple columns in the same query
-queries[2] = """
-update PostsCopy set age =  date_part('year', age(timestamp '2022-09-01', CreationDate) 
+queries[2] ="""
+update postscopy 
+set age = date_part('year', age(timestamp '2022-09-01', users.creationdate) ), 
+    ownerdisplayname =  users.displayname,
+    popularity =
+    case
+        when viewcount >= 20000
+            then 'High'::popularityscale
+        when viewcount > 10000 and viewcount <20000
+            then 'Medium'::popularityscale
+        when viewcount <= 10000
+            then 'Low'::popularityscale 
+    end
+    from users 
+    where users.id = postscopy.owneruserid;
+"""
+# popularity
+"""update postscopy
+                set popularity = 
+                case
+                    when viewcount >= 20000
+                        then 'high'::popularityscale
+                    when viewcount > 10000 and viewcount <20000
+                        then 'medium'::popularityscale
+                    when viewcount <= 10000
+                        then 'low'::popularityscale 
+                end ;
+            """
 
-ownerdisplayname, popularity) = (
-    date_part('year', age(timestamp '2022-09-01', CreationDate) ),
-    displayname from users where users.id == postscopy.owneruserid,
-    
-    case
-        when viewcount >=20000
-            then High::popularityscale
-        when viewcount > 10000 and viewcount <20000
-            then Medium::popularityscale
-        when viewcount <=10000
-            then Low::popularityscale  );
-""" """
-update PostsCopy set (age, ownerdisplayname, popularity) = (
-    date_part('year', age(timestamp '2022-09-01', CreationDate) ),
-    displayname from users where users.id == postscopy.owneruserid,
-    
-    case
-        when viewcount >=20000
-            then High::popularityscale
-        when viewcount > 10000 and viewcount <20000
-            then Medium::popularityscale
-        when viewcount <=10000
-            then Low::popularityscale  );
+# ownerdisplayname
+""" update postscopy set ownerdisplayname = users.displayname from users where users.id = postscopy.owneruserid;
+
 """
 
 
@@ -94,7 +100,23 @@ where tags is null ;
 ### 
 ### Use `select * from postscopy where id > 100000;` to confirm.
 queries[4] = """
-select 0;
+insert into postscopy(
+    id, 
+    posttypeid, 
+    title,
+    creationdate,
+    score,
+    owneruserid,
+    lasteditoruserid)
+select
+    100001 + n, 
+    1, 
+    'Post ' || (100001 + n)::text, 
+    timestamp '2022-10-01' + (n || ' day')::interval,
+    0,
+    -1,
+    -1
+from generate_series(0,9) as g(n);
 """
 
 ### 5 [0.25]. Write a single query to rank the "Posts" by the number of votes, with the Post 
@@ -111,10 +133,16 @@ select 0;
 ###
 ### Output Columns: PostID, Rank
 ### Order by: Rank ascending, PostID ascending
-queries[5] = """
-select 0;
+queries[5] ="""
+with r as (
+    select posts.id as pid, count(votes.id) as num_votes
+    from posts left outer join votes on ( posts.id = votes.postid) 
+    group by posts.id
+)
+select pid, rank() over (order by num_votes desc) as p_rank
+from r
+order by p_rank asc, pid asc;
 """
-
 
 ### 6 [0.25]. Write a statement to create a new View with the signature:
 ### UsersSummary(Id, NumOwnerPosts, NumLastEditorPosts, NumBadges)
@@ -134,8 +162,21 @@ select 0;
 ###
 ### Ensure that the latter is case (i.e., the query for a single ID runs quickly).
 ###
-queries[6] = """
-select 0;
+queries[6] ="""
+create view UsersSummary(id, numownerposts, numlasteditorposts, numbadges) as
+select users.id, 
+    (select count(posts.id) 
+    from posts
+    where users.id = posts.owneruserid) as numownerposts,
+
+    (select count(posts.id)
+    from posts
+    where users.id = posts.lasteditoruserid) as numlasteditorposts,
+
+    (select count(badges.id)
+    from badges
+    where users.id = badges.userid) as numbadges
+from users;
 """
 
 ### 7 [0.5]. Use window functions to construct a query to associate with each user
@@ -166,14 +207,19 @@ select 0;
 ### 4 | Nick Craver                                     |       2011 |    61 |          65.2201739850869925
 ### 5 | Emmett                                          |       2011 |    32 |          65.2201739850869925
 ### 
-queries[7] = """
+
+# average is sum of all views from all (users in the same joined year)
+queries[7] ="""
 with temp as (
         select ID, displayName, extract(year from CreationDate) as JoinedYear, Views
         from users
         )
-select *
-from temp;
+select temp.id, temp.displayName, temp.JoinedYear, temp.Views, avg(temp.views)
+over (partition by temp.joinedyear) as AvgViewsForUsersFromThatYear
+from temp
+order by joinedyear, id;
 """
+
 
 ### 8 [0.25]. Write a function that takes in the ID of a Post as input, and returns the
 ### number of comments for that user.
@@ -192,7 +238,23 @@ from temp;
 ### will be very slow given the number of posts.
 ###
 queries[8] = """
-select 0;
+create function numcomments(inid int) 
+returns bigint 
+language plpgsql
+as
+$$
+declare
+    num integer;
+begin
+    select count(comments.id)
+    into num
+    from comments
+    where comments.postid = inid;
+
+    return num;
+end;
+$$;
+select ID, Title, NumComments(ID) from Posts limit 10;
 """
 
 ### 9 [0.5]. Write a function that takes in an Userid as input, and returns a JSON string with 
@@ -224,8 +286,41 @@ select 0;
 ### still a possibility that you fail comparisons because of that.
 ### 
 ### Confirm that: 'select userbadges(10);' returns the result above.
-queries[9] = """
-    select 0;
+queries[9] ="""
+drop function userbadges;
+create function UserBadges(inid int)
+returns varchar
+language plpgsql
+as
+$$
+declare
+    badgesjson varchar;
+begin
+    select json_build_object(
+        'userid', users.id, 
+        'displayname', users.displayname, 
+        'badges', (
+            coalesce(
+                (select array_agg(all_badges) 
+                from (
+                    select name, class, date
+                    from badges
+                    where badges.userid = inid
+                )
+                as all_badges),
+            '{}'
+                    )
+            )
+        )
+    into badgesjson
+    from users
+    where users.id = inid;
+
+    select replace(badgesjson, ' ', '')
+    into badgesjson;
+    return badgesjson;
+end;
+$$;
 """
 
 ### 10/11 [0.5]. Create a new table using:
@@ -257,7 +352,37 @@ queries[9] = """
 ###
 ### The trigger should also be named: UpdateMostFavoritedOnInsert
 queries[10] = """
-select 0;
+drop table if exists mostfavoritedposts;
+create table MostFavoritedPosts as
+    select p.ID, p.Title, count(v.ID) as NumFavorites
+    from posts p left join votes v 
+                    on (p.id = v.postid and v.votetypeid = 5)
+    group by p.id, p.title
+    having count(v.ID) > 10;
+
+create or replace function UpdateMostFavoritedOnInsert()
+    returns trigger
+    language plpgsql
+    as
+    $$
+    begin
+    if (
+        (select count(*)
+        from mostfavoritedposts
+        where votes.postid = mostfavoritedposts.id) >= 1) 
+    then (
+        update mostfavoritedposts
+        set numfavorites = numfavorites +1
+        where mostfavoritedposts.id 
+    )
+    else if (//check if adding vote makes it a most favorited post ) 
+    then(
+        //add it in
+    )
+    end if;
+
+    end;
+    $$;
 """
 ### CREATE OR REPLACE FUNCTION UpdateMostFavoritedOnInsert()
 ###  RETURNS TRIGGER
@@ -267,7 +392,11 @@ select 0;
 ###  $$;
 
 queries[11] = """
-select 0;
+create trigger UpdateMostFavoritedOnInsert 
+after insert on votes
+referencing new table as ntab and old table as otab
+for each row 
+execute procedure UpdateMostFavoritedOnInsert();
 """
 
 ### 12 [0.25]. The goal here is to write a query to count the number of posts for each
