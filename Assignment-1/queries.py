@@ -54,6 +54,7 @@ order by Year asc;
 ### Output columns: Id, DisplayName, CreationDate, UpVotes
 ### Order by Id ascending
 # theres rows with 0  upvotes and 0 days 
+# i need fewer rows
 queries[4] = """
 select Id, DisplayName, CreationDate, UpVotes
 from users
@@ -64,12 +65,12 @@ order by Id asc;
 ### 5. Write a single query to report all Badges for the users with reputation between 10000 and 11000, by joining Users and Badges.
 ### Output Column: Id (from Users), DisplayName, Name (from Badges), Reputation
 ### Order by: Id increasing
+# i need fewer rows
 queries[5] ="""
 select users.id as id, displayname, badges.name as name, reputation
 from users join badges on (reputation >= 10000 and reputation <= 11000 and users.id = badges.userid)
 order by id asc;
 """
-
 # without join
 """
 select users.id as id, displayname, badges.name as name, reputation
@@ -78,18 +79,21 @@ where reputation >= 10000 and reputation <= 11000 and users.id = badges.userid
 order by id asc;
 """
 
+
 ### 6. Write a query to find all Posts who satisfy one of the following conditions:
 ###        - the post title contains 'postgres' and the number of views is at least 50000
 ###        - the post title contains 'mongodb' and the number of views is at least 25000
 ### The match should be case insensitive
 ### Output columns: Id, Title, ViewCount
 ### Order by: Id ascending
+# i need more rows
 queries[6] = """
 select Id, Title, ViewCount
 from posts
 where (Title ilike '%postgres%' and ViewCount >= 50000) or (Title ilike '%mongodb%' and ViewCount >= 25000)
 order by Id asc;
 """
+
 
 ### 7. Count the number of the Comments made by the user with DisplayName 'JHFB'.
 ### Output columns: Num_Comments
@@ -251,6 +255,7 @@ group by r
 order by r asc
 """
 
+
 ### 16. Generalizing #14 above, associate posts with both the number of
 ### comments and the number of votes
 ### 
@@ -307,23 +312,6 @@ group by postid),
 
 u as (select distinct parentid
 from posts
-where parentid is not null)
-
-select u.parentid, v.vote_count as total
-from u, v, posts
-where v.postid = posts.id
-group by u.parentid, v.vote_count
-order by u.parentid asc;
-"""
-
-
-
-"""with v as (select postid, count(postid) as vote_count
-from votes
-group by postid), 
-
-u as (select distinct parentid
-from posts
 where parentid is not null),
 
 w as (select u.parentid as id, sum(v.vote_count) as total
@@ -331,10 +319,10 @@ from u, v
 where v.postid = u.parentid
 group by u.parentid)
 
-select w.id, posts.title, v.vote_count + w.total as grand
+select w.id, posts.title
 from posts, w, v
-where v.vote_count + w.total >= 100 and posts.id = w.id and v.postid = w.id 
-group by w.id, posts.title, grand
+where v.vote_count + w.total >= 100 and posts.id =  w.id and v.postid = w.id
+group by w.id, posts.title
 order by w.id asc;
 """
 
@@ -362,27 +350,10 @@ from posts
 where parentid is not null
 order by parentid asc)
 
-select u.parentid, sum(v.vote_count) as total
-from u, v, posts
-where posts.parentid = u.parentid
-group by u.parentid
-order by u.parentid asc;
-"""
-
-# get x as vote count of parents
-"""with v as (select postid, count(postid) as vote_count
-from votes
-group by postid), 
-
-u as (select distinct parentid
-from posts
-where parentid is not null
-order by parentid asc)
-
-select u.parentid, v.vote_count
+select u.parentid as family, sum(v.vote_count) as total
 from u, v
 where v.postid = u.parentid
-group by u.parentid, v.vote_count
+group by u.parentid
 order by u.parentid asc;
 """
 # w as (select parentid as id from posts union all select id from posts)
@@ -414,6 +385,7 @@ queries[19] = """
     group by p.id, p.title
     order by p.id asc;
 """
+
 
 ### 20. Write a query to generate a table: 
 ### (VoteTypeDescription, Day_of_Week, Num_Votes)
