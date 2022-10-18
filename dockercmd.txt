@@ -1,1 +1,4 @@
 docker run --rm -ti -p 8888:8888 -p 8881:8881 -p 5432:5432 -v C:\Users\joshu\Documents\Github\cmsc424-fall2022:/data amolumd/cmsc424-fall2022
+
+
+docker run --rm -ti -p 5000:5000 -p 8888:8888 -p 8881:8881 -p 5432:5432 -v C:\Users\joshu\Documents\Github\cmsc424-fall2022:/data amolumd/cmsc424-fall2022
