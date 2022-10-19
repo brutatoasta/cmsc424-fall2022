@@ -29,7 +29,10 @@ public class NearestNeighbor
 			for (Map.Entry<Integer, Integer> entry : jaccards.entrySet()) {
 				int userid = entry.getKey();
 				int nbr = entry.getValue();
-				System.out.println("userid: "+ userid + " nbr: " + nbr + "\n");
+				if (userid == -1){
+					continue;
+				}
+				// System.out.println("userid: "+ userid + " nbr: " + nbr + "\n");
 				preparedStatement.setInt(1, nbr);
 				preparedStatement.setInt(2, userid);
 				preparedStatement.addBatch();
@@ -45,7 +48,7 @@ public class NearestNeighbor
 	public static Connection connectDB(){
 		Connection conn = null;
 		 // Load the PostgreSQL JDBC Driver
-		 System.out.println("-------- PostgreSQL " + "JDBC Connection Testing ------------");
+		 // System.out.println("-------- PostgreSQL " + "JDBC Connection Testing ------------");
 		 try {
 				 Class.forName("org.postgresql.Driver");
 		 } catch (ClassNotFoundException e) {
@@ -53,7 +56,7 @@ public class NearestNeighbor
 				 e.printStackTrace();
 				 return null;
 		 }
-		 System.out.println("PostgreSQL JDBC Driver Registered!");
+		// System.out.println("PostgreSQL JDBC Driver Registered!");
 
 		 // Set up the conn
 		
@@ -66,12 +69,12 @@ public class NearestNeighbor
 		 }
 
 		 if (conn != null) {
-				 System.out.println("You made it, take control your database now!");
-				 return conn;
+				// System.out.println("You made it, take control your database now!");
+				return conn;
 		 } else {
-				 System.out.println("Failed to make conn!");
-				 return null;
-		 }
+				System.out.println("Failed to make conn!");
+				return null;
+		}
 	}
 	
 	public static void dropCol(Connection conn){
@@ -158,6 +161,9 @@ public class NearestNeighbor
 							continue;
 						}
 						int you_userid = userids.get(j);
+						if((me_userid == -1) || (you_userid == -1)){
+							continue;
+						}
 						HashSet<String> you_set = sets.get(j);
 						Double newDouble = jaccard(me_set, you_set);
 

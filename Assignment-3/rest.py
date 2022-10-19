@@ -78,14 +78,19 @@ class User(Resource):
         
         conn = psycopg2.connect("host=127.0.0.1 dbname=stackexchange user=root password=root")
         cur = conn.cursor()
-
-        cur.execute("""select users.id, displayname, users.creationdate, reputation, posts.title 
-                        from users, posts 
-                        where users.id = %s and users.id = posts.owneruserid
+        user_query = """select id, displayname, creationdate, reputation 
+                        from users
+                        where id = %s
+                        """ % (userid)
+        cur.execute(user_query)
+        user_ans = cur.fetchall()
+        cur.execute("""select title 
+                        from posts 
+                        where owneruserid = %s
                         """ % (userid))
-        ans = cur.fetchall()
-        numPosts = len(ans)
-        exists_user = len(ans) > 1
+        posts_ans = cur.fetchall()
+        numPosts = len(posts_ans)
+        exists_user = len(user_ans) > 0
     
         if not exists_user:
             cur.close()
@@ -94,11 +99,11 @@ class User(Resource):
         else:
             postTitles = []
             for i in range(numPosts):
-                postTitle = str(ans[i][4])
+                postTitle = str(posts_ans[i][0])
                 if postTitle != "None":
                     postTitles.append(postTitle)
-            # ret = {"ID": "xyz", "DisplayName": "xyz", "CreationDate": "...", "Reputation": "...", "PostTitles": ["posttitle1", "posttitle1"]}
-            ret = {"ID": ans[0][0], "DisplayName": ans[0][1], "CreationDate": str(ans[0][2]), "Reputation": ans[0][3], "PostTitles": postTitles}
+            postTitle.sort()
+            ret = {"ID": user_ans[0][0], "DisplayName": user_ans[0][1], "CreationDate": str(user_ans[0][2]), "Reputation": user_ans[0][3], "PostTitles": postTitles}
             conn.commit()
             cur.close()
             conn.close()
@@ -135,6 +140,7 @@ class User(Resource):
             """
            
             cur.execute(insert_sql,  (userid, args["reputation"], args["creationdate"], args["displayname"], 0, args["upvotes"], args["downvotes"]))
+            conn.commit()
             cur.close()
             conn.close()
             return "SUCCESS", 201

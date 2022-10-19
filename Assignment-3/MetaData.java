@@ -87,13 +87,18 @@ public class MetaData
 				System.out.println(attributeln.substring(0, attributeln.length() -2));
 
 				// get primary key
-				System.out.print("Primary Key: ");
+				String pkLine = "Primary Key: ";
+				ArrayList<String> pkLineList = new ArrayList<>();
 				ResultSet pKey = dbmd.getPrimaryKeys(null, null, tableName);
 				while(pKey.next()){
 					String pKeyName = pKey.getString("COLUMN_NAME");
-					System.out.print(pKeyName.toUpperCase());
+					pkLineList.add(pKeyName.toUpperCase());					
 				}
-				System.out.println("\r");
+				Collections.sort(pkLineList);
+				for (String b : pkLineList ){
+					pkLine +=  b + ", ";
+				}
+				System.out.println(pkLine.substring(0, pkLine.length() -2));
 				
 				//get Joinable pairs
 				ResultSet fKeys = dbmd.getImportedKeys(null, null, tableName);		
