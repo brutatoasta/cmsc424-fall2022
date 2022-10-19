@@ -19,9 +19,13 @@ class Post(Resource):
         cur.execute("select id, posttypeid, title, AcceptedAnswerID, creationdate from posts where id = %s" % (postid))
         ans = cur.fetchall()
         if len(ans) == 0:
+            cur.close()
+            conn.close()
             return "Post Not Found", 404
         else:
             ret = {"id": ans[0][0], "PostTypeID": ans[0][1], "Title": str(ans[0][2]), "AcceptedAnswerID": str(ans[0][3]), "CreationDate": str(ans[0][4])}
+            cur.close()
+            conn.close()
             return ret, 200
 
 
@@ -34,7 +38,14 @@ class Dashboard(Resource):
     # FORMAT: {"Top 100 Users by Reputation": [{"ID": "...", "DisplayName": "...", "Reputation": "...", "Rank": "..."}, {"ID": "...", "DisplayName": "...", "Reputation": "...", "Rank": "..."}, ]
     def get(self, name):
         if name == "top100users":
-            return "Not implemented yet", 404
+            conn = psycopg2.connect("host=127.0.0.1 dbname=stackexchange user=root password=root")
+            cur = conn.cursor()
+
+            cur.execute("select id, posttypeid, title, AcceptedAnswerID, creationdate from posts where id = %s" % (postid))
+            ans = cur.fetchall()
+
+
+            return ret, 200
         else:
             return "Unknown Dashboard Name", 404
 
@@ -62,6 +73,8 @@ class User(Resource):
         exists_user = len(ans) > 1
     
         if not exists_user:
+            cur.close()
+            conn.close()
             return "User not found", 404
         else:
             postTitles = []
@@ -71,6 +84,8 @@ class User(Resource):
                     postTitles.append(postTitle)
             # ret = {"ID": "xyz", "DisplayName": "xyz", "CreationDate": "...", "Reputation": "...", "PostTitles": ["posttitle1", "posttitle1"]}
             ret = {"ID": ans[0][0], "DisplayName": ans[0][1], "CreationDate": str(ans[0][2]), "Reputation": ans[0][3], "PostTitles": postTitles}
+            cur.close()
+            conn.close()
             return ret, 200
 
     # Add a new user into the database, using the information that's part of the POST request
@@ -99,14 +114,69 @@ class User(Resource):
     # Delete the user with the specific user id from the database
     def delete(self, userid):
         # Add your code to check if the userid is present in the database
-        exists_user = False
+        conn = psycopg2.connect("host=127.0.0.1 dbname=stackexchange user=root password=root")
+        cur = conn.cursor()
 
+        cur.execute("""select id from users 
+                        where id = %s
+                        """ % (userid))
+        user_ans = cur.fetchall()
+        exists_user = len(user_ans) > 0
+    
         if exists_user:
             # Add your code to delete the user from the user table
             # If there are corresponding entries in "badges" table for that userid, those should be deleted
             # For posts, comments, votes, set the appropriate userid fields to -1 (since that content should not be deleted)
+            cur.execute("""select userid from badges 
+                        where userid = %s
+                        """ % (userid))
+            
+            badge_ans = cur.fetchall()
+            exists_badge = len(badge_ans) > 0
+            if exists_badge:
+                cur.execute("""delete from badges 
+                        where userid = %s
+                        """ % (userid))
+            conn.commit()
+
+            cur.execute(f"select owneruserid from posts where owneruserid = {userid};")
+            t_ans = cur.fetchall()
+            if len(t_ans) > 0: # if have, change userid to -1
+                cur.execute(f"update posts set owneruserid = {-1} where owneruserid = {userid};") 
+                assert(cur.rowcount > 0)
+                conn.commit()
+
+            cur.execute(f"select lasteditoruserid from posts where lasteditoruserid = {userid};")
+            t_ans = cur.fetchall()
+            if len(t_ans) > 0: # if have, change userid to -1
+                cur.execute(f"update posts set lasteditoruserid = {-1} where lasteditoruserid = {userid};") 
+                print("hello")
+                assert(cur.rowcount > 0)
+                conn.commit()
+
+            cur.execute(f"select userid from comments where userid = {userid};")
+            t_ans = cur.fetchall()
+            if len(t_ans) > 0: # if have, change userid to -1
+                cur.execute(f"update comments set userid = {-1} where userid = {userid};") 
+                assert(cur.rowcount > 0)
+                conn.commit()
+            
+            cur.execute(f"select userid from votes where userid = {userid};")
+            t_ans = cur.fetchall()
+            if len(t_ans) > 0: # if have, change userid to -1
+                cur.execute(f"update votes set userid = {-1} where userid = {userid};") 
+                assert(cur.rowcount > 0)
+                conn.commit()
+
+            cur.execute("delete from users where id = %s;"% (userid))
+            assert(cur.rowcount == 1)
+            conn.commit()
+            cur.close()
+            conn.close()
             return "SUCCESS", 201
         else:
+            cur.close()
+            conn.close()
             return "FAILURE -- Unknown Userid", 404
       
 api.add_resource(User, "/user/<int:userid>")
