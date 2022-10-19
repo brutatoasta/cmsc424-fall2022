@@ -1,6 +1,8 @@
 import java.sql.*;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class NearestNeighbor 
 {
@@ -18,14 +20,25 @@ public class NearestNeighbor
 		 * Add your code to add a new column to the users table (set to null by default), calculate the nearest neighbor for each node (within first 5000), and write it back into the database for those users..
 		 ************/
 		addCol(connection);
-		ResultSet rs = getInfo(connection);
-		while (rs.next()) {
-			String name = rs.
-			
-	}
+		HashMap<Integer, Integer> jaccards = getInfo(connection);
+		String update = "update users set nearest_neighbor=? where id=?";
+		PreparedStatement preparedStatement = null;
 	
-
-        return;
+		try {
+			preparedStatement = connection.prepareStatement(update);
+			for (Map.Entry<Integer, Integer> entry : jaccards.entrySet()) {
+				int userid = entry.getKey();
+				int nbr = entry.getValue();
+				preparedStatement.setInt(1, userid);
+				preparedStatement.setInt(2, nbr);
+				preparedStatement.addBatch();
+			}
+			preparedStatement.close();
+		} catch (SQLException e ) {
+				System.out.println("jaccards not updated!\n");
+				System.out.println(e);
+		}
+        System.out.println("jaccards updated!\n");
 	}
 	public static Connection connectDB(){
 		Connection connection = null;
@@ -58,39 +71,120 @@ public class NearestNeighbor
 				 return null;
 		 }
 	}
-	public static void addCol(Connection connection){
+	
+	public static void dropCol(Connection connection){
 		Statement stmt = null;
-		String update = "ALTER TABLE users" +
-						"ADD nearest_neighbor INTEGER;";
+		String update = "alter table users " +
+						"drop column nearest_neighbor;";
 		try {
 				stmt = connection.createStatement();
 				stmt.executeUpdate(update);
 				
 				stmt.close();
 		} catch (SQLException e ) {
+				System.out.println("column not added!\n");
 				System.out.println(e);
 		}
 	}
-	public static ResultSet getInfo(Connection connection){
+	public static void addCol(Connection connection){
 		Statement stmt = null;
-		ResultSet rs = null;
-		String query = "select users.id, array_remove(array_agg(posts.tags), null) as arr" +
-						"from users, posts " +
-						"where users.id = posts.OwnerUserId and users.id < 5000 " +
-						"group by users.id" +
-						"having count(posts.tags) > 0;";
+		String update = "alter table users " +
+						"add column nearest_neighbor int;";
 		try {
-				stmt = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE , ResultSet.CONCUR_UPDATABLE);
-				rs = stmt.executeQuery(query);
+				stmt = connection.createStatement();
+				stmt.executeUpdate(update);
 				
+				stmt.close();
 		} catch (SQLException e ) {
+				System.out.println("column not added!\n");
 				System.out.println(e);
 		}
-		return rs;
+	}
+	public static HashMap<Integer, Integer> getInfo(Connection connection){
+		Statement stmt = null;
+		
+		ArrayList<Integer> userids = new ArrayList<>();
+		ArrayList<HashSet<String>> sets = new ArrayList<>();
+		HashMap<Integer, Integer> jaccards = new HashMap<>();
+		String query = "select users.id, array_remove(array_agg(posts.tags), null) as arr " +
+						"from users, posts " +
+						"where users.id = posts.OwnerUserId and users.id < 5000 " +
+						"group by users.id " +
+						"having count(posts.tags) > 0;";
+		try {
+				stmt = connection.createStatement();
+				ResultSet rs = stmt.executeQuery(query);
+				
+				// for each row in rs, populate lists of userids and sets
+				while(rs.next()){
+					//get userid
+					int userid = rs.getInt(0);
+
+					// get set of tags in each row
+					HashSet<String> set = new HashSet<>();
+					Array sqlarr = rs.getArray("arr"); // error
+					String[] sqlarr_str_arr = (String[]) sqlarr.getArray();
+					for (String tags: sqlarr_str_arr){
+						tags = tags.replaceAll(">", " "); // remove the tags
+						tags = tags.replaceAll("<", " ");
+						String[] tags_arr = tags.split(" ");
+						for (String tag : tags_arr){
+							set.add(tag);
+						}
+					}
+					// add to ArrayLists
+					sets.add(set);
+					userids.add(userid);
+				}
+				
+				// calculate the jaccard coefficient, and update jaccards array
+				int num_userids = userids.size();
+				for (int i = 0; i < num_userids; i++){
+					// for each user
+					int me_userid = userids.get(i);
+					HashSet<String> me_set = sets.get(i);
+					// keep state of best jaccard coeff, and with who
+					int best_friend = 0;
+					Double best_friend_coeff = 0.0;
+
+					//compare against every other users tags
+					for (int j = 0; j < num_userids; j++ ){
+						if (i == j){
+							continue;
+						}
+						int you_userid = userids.get(j);
+						HashSet<String> you_set = sets.get(j);
+						Double newDouble = jaccard(me_set, you_set);
+
+						if (newDouble > best_friend_coeff){
+							best_friend_coeff = newDouble;
+							best_friend = you_userid;
+						}
+						else if( newDouble == best_friend_coeff){
+							// use the lowest userid
+							if(you_userid < best_friend){ // if new userid is lower, update
+								best_friend_coeff = newDouble;
+								best_friend = you_userid;
+							}
+							// else leave alone
+						}
+					}
+					// best friend is determined, add to jaccards
+					jaccards.put(me_userid, best_friend);
+
+				}
+				stmt.close();
+				
+		} catch (SQLException e ) {
+			System.out.println("getInfo: jaccards not made!\n");
+				System.out.println(e);
+		}
+		return jaccards;
 	}
 
 	public static void main(String[] argv) {
 		Connection connection = connectDB();
+		dropCol(connection);
 		executeNearestNeighbor(connection);
 	}
 }
