@@ -81,7 +81,7 @@ is built using the Python `Flask` library, and couple of other packages built on
 - Ensure that PostgreSQL is running in the container.
 - Now, in the Assignment-3 directory, you can start the Flask server by doing: `python3 rest.py`
 - This should get the Flask server running, and listening on port 5000.
-- In your web browser, go to: `http://127.0.0.1:5000/post/14' -- you should see the JSON response from the web server with the basic information for post 14 in the database.
+- In your web browser, go to: [http://127.0.0.1:5000/post/14](http://127.0.0.1:5000/post/14) -- you should see the JSON response from the web server with the basic information for post 14 in the database.
     - If the web server is successfully up but this doesn't work, it's likely a problem with port mapping
 - Your task is implement three other, user-specific endpoints:
     - `GET /user/<userid>/`: Given a specific userid, this should return a JSON with the details about the user as listed in `rest.py`

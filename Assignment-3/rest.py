@@ -49,12 +49,28 @@ class User(Resource):
         # CreationDate should be of the format: "2007-02-04" (this is what Python str() will give you)
 
         # Add your code to check if the userid is already present in the database
-        exists_user = True
+        
+        conn = psycopg2.connect("host=127.0.0.1 dbname=stackexchange user=root password=root")
+        cur = conn.cursor()
 
+        cur.execute("""select users.id, displayname, users.creationdate, reputation, posts.title 
+                        from users, posts 
+                        where users.id = %s and users.id = posts.owneruserid
+                        """ % (userid))
+        ans = cur.fetchall()
+        numPosts = len(ans)
+        exists_user = len(ans) > 1
+    
         if not exists_user:
             return "User not found", 404
         else:
-            ret = {"ID": "xyz", "DisplayName": "xyz", "CreationDate": "...", "Reputation": "...", "PostTitles": ["posttitle1", "posttitle1"]}
+            postTitles = []
+            for i in range(numPosts):
+                postTitle = str(ans[i][4])
+                if postTitle != "None":
+                    postTitles.append(postTitle)
+            # ret = {"ID": "xyz", "DisplayName": "xyz", "CreationDate": "...", "Reputation": "...", "PostTitles": ["posttitle1", "posttitle1"]}
+            ret = {"ID": ans[0][0], "DisplayName": ans[0][1], "CreationDate": str(ans[0][2]), "Reputation": ans[0][3], "PostTitles": postTitles}
             return ret, 200
 
     # Add a new user into the database, using the information that's part of the POST request
