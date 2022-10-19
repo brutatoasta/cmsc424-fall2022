@@ -10,3 +10,5 @@ j:
 
 flask:
 	python3 rest.py
+td:
+	curl -X DELETE http://127.0.0.1:5000/user/11 
