@@ -41,10 +41,25 @@ class Dashboard(Resource):
             conn = psycopg2.connect("host=127.0.0.1 dbname=stackexchange user=root password=root")
             cur = conn.cursor()
 
-            cur.execute("select id, posttypeid, title, AcceptedAnswerID, creationdate from posts where id = %s" % (postid))
+            cur.execute("""select id, displayname, reputation, rank () over (order by reputation desc) as rank 
+                            from users 
+                            order by rank asc
+                            limit 100;""" )
             ans = cur.fetchall()
-
-
+            if len(ans) == 0:
+                cur.close()
+                conn.close()
+                return "Post Not Found", 404
+            top100 = []
+            for i in range(100):
+                top100.append({"ID": ans[i][0], 
+                                "DisplayName": ans[i][1], 
+                                "Reputation": str(ans[i][2]), 
+                                "Rank": str(ans[i][3])
+                })
+            ret = {"Top 100 Users by Reputation": top100}
+            cur.close()
+            conn.close()
             return ret, 200
         else:
             return "Unknown Dashboard Name", 404
