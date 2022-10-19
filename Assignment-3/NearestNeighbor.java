@@ -15,33 +15,35 @@ public class NearestNeighbor
 		}
 		return ((double) i_size)/(total_size - i_size);
 	}
-	public static void executeNearestNeighbor(Connection connection) {
+	public static void executeNearestNeighbor(Connection conn) {
 		/************* 
 		 * Add your code to add a new column to the users table (set to null by default), calculate the nearest neighbor for each node (within first 5000), and write it back into the database for those users..
 		 ************/
-		addCol(connection);
-		HashMap<Integer, Integer> jaccards = getInfo(connection);
-		String update = "update users set nearest_neighbor=? where id=?";
+		addCol(conn);
+		HashMap<Integer, Integer> jaccards = getInfo(conn);
+		String update = "update users set nearest_neighbor= ? where id= ?";
 		PreparedStatement preparedStatement = null;
 	
 		try {
-			preparedStatement = connection.prepareStatement(update);
+			preparedStatement = conn.prepareStatement(update);
 			for (Map.Entry<Integer, Integer> entry : jaccards.entrySet()) {
 				int userid = entry.getKey();
 				int nbr = entry.getValue();
-				preparedStatement.setInt(1, userid);
-				preparedStatement.setInt(2, nbr);
+				System.out.println("userid: "+ userid + " nbr: " + nbr + "\n");
+				preparedStatement.setInt(1, nbr);
+				preparedStatement.setInt(2, userid);
 				preparedStatement.addBatch();
 			}
+			preparedStatement.executeBatch();
 			preparedStatement.close();
 		} catch (SQLException e ) {
 				System.out.println("jaccards not updated!\n");
 				System.out.println(e);
 		}
-        System.out.println("jaccards updated!\n");
+
 	}
 	public static Connection connectDB(){
-		Connection connection = null;
+		Connection conn = null;
 		 // Load the PostgreSQL JDBC Driver
 		 System.out.println("-------- PostgreSQL " + "JDBC Connection Testing ------------");
 		 try {
@@ -53,31 +55,31 @@ public class NearestNeighbor
 		 }
 		 System.out.println("PostgreSQL JDBC Driver Registered!");
 
-		 // Set up the connection
+		 // Set up the conn
 		
 		 try {
-				 connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/stackexchange","root", "root");
+				 conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/stackexchange","root", "root");
 		 } catch (SQLException e) {
 				 System.out.println("Connection Failed! Check output console");
 				 e.printStackTrace();
 				 return null;
 		 }
 
-		 if (connection != null) {
+		 if (conn != null) {
 				 System.out.println("You made it, take control your database now!");
-				 return connection;
+				 return conn;
 		 } else {
-				 System.out.println("Failed to make connection!");
+				 System.out.println("Failed to make conn!");
 				 return null;
 		 }
 	}
 	
-	public static void dropCol(Connection connection){
+	public static void dropCol(Connection conn){
 		Statement stmt = null;
 		String update = "alter table users " +
 						"drop column nearest_neighbor;";
 		try {
-				stmt = connection.createStatement();
+				stmt = conn.createStatement();
 				stmt.executeUpdate(update);
 				
 				stmt.close();
@@ -86,12 +88,12 @@ public class NearestNeighbor
 				System.out.println(e);
 		}
 	}
-	public static void addCol(Connection connection){
+	public static void addCol(Connection conn){
 		Statement stmt = null;
 		String update = "alter table users " +
-						"add column nearest_neighbor int;";
+						"add column nearest_neighbor int default null;";
 		try {
-				stmt = connection.createStatement();
+				stmt = conn.createStatement();
 				stmt.executeUpdate(update);
 				
 				stmt.close();
@@ -100,7 +102,7 @@ public class NearestNeighbor
 				System.out.println(e);
 		}
 	}
-	public static HashMap<Integer, Integer> getInfo(Connection connection){
+	public static HashMap<Integer, Integer> getInfo(Connection conn){
 		Statement stmt = null;
 		
 		ArrayList<Integer> userids = new ArrayList<>();
@@ -112,26 +114,29 @@ public class NearestNeighbor
 						"group by users.id " +
 						"having count(posts.tags) > 0;";
 		try {
-				stmt = connection.createStatement();
+				stmt = conn.createStatement();
 				ResultSet rs = stmt.executeQuery(query);
 				
 				// for each row in rs, populate lists of userids and sets
 				while(rs.next()){
 					//get userid
-					int userid = rs.getInt(0);
+					int userid = rs.getInt("id");
 
 					// get set of tags in each row
 					HashSet<String> set = new HashSet<>();
-					Array sqlarr = rs.getArray("arr"); // error
-					String[] sqlarr_str_arr = (String[]) sqlarr.getArray();
-					for (String tags: sqlarr_str_arr){
-						tags = tags.replaceAll(">", " "); // remove the tags
-						tags = tags.replaceAll("<", " ");
-						String[] tags_arr = tags.split(" ");
-						for (String tag : tags_arr){
-							set.add(tag);
-						}
+					String tags = rs.getString("arr"); // error
+					
+					tags = tags.replaceAll("[><{},]", " "); // remove the tags
+					
+					
+					String[] tags_arr = tags.split(" ");
+
+					for (String tag : tags_arr){
+						set.add(tag);
 					}
+					// for (String tag : set){
+					// 	System.out.println(tag);
+					// }
 					// add to ArrayLists
 					sets.add(set);
 					userids.add(userid);
@@ -163,7 +168,6 @@ public class NearestNeighbor
 						else if( newDouble == best_friend_coeff){
 							// use the lowest userid
 							if(you_userid < best_friend){ // if new userid is lower, update
-								best_friend_coeff = newDouble;
 								best_friend = you_userid;
 							}
 							// else leave alone
@@ -181,10 +185,33 @@ public class NearestNeighbor
 		}
 		return jaccards;
 	}
+	public static void check(Connection conn){
+		Statement stmt = null;
+		String query = "select * from users order by id limit 10;";
+		try {
+				stmt = conn.createStatement();
+				ResultSet rs = stmt.executeQuery(query);
+				ResultSetMetaData rsmd = rs.getMetaData();
+				int colNum = rsmd.getColumnCount();
+				while (rs.next()){
+					for(int i = 1 ; i <= colNum; i++){
 
+						System.out.print(rs.getString(i) + " "); //Print one element of a row
+				  
+				  }
+				  
+					System.out.println();//Move to the next line to print the next row. 
+				}
+				stmt.close();
+		} catch (SQLException e ) {
+				System.out.println(e);
+		}
+
+	}
 	public static void main(String[] argv) {
-		Connection connection = connectDB();
-		dropCol(connection);
-		executeNearestNeighbor(connection);
+		Connection conn = connectDB();
+		dropCol(conn);
+		executeNearestNeighbor(conn);
+		check(conn);
 	}
 }
