@@ -18,3 +18,13 @@ tdash:
 
 tp:
 	curl -X POST -d '{"reputation": 1, "creationdate": "2022-10-01", "displayname": "something", "upvotes": 10, "downvotes": 0}' -H 'Content-Type: application/json'  127.0.0.1:5000/user/11111
+
+mdst:
+	javac MetaData.java
+	java -classpath .:./postgresql-42.2.10.jar MetaData stackexchange > OutputMetadataStackexchange.txt
+
+mdun:
+	javac MetaData.java
+	java -classpath .:./postgresql-42.2.10.jar MetaData university > OutputMetadataUniversity.txt
+mdif:
+	./diff_check.sh stackexchange exampleOutputMetadataStackexchange.txt
