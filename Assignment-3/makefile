@@ -10,3 +10,9 @@ j:
 
 flask:
 	python3 rest.py
+
+td:
+	curl -X DELETE http://127.0.0.1:5000/user/11
+
+tp:
+	curl -X POST -d '{"reputation": 1, "creationdate": "2022-10-01", "displayname": "something", "upvotes": 10, "downvotes": 0}' -H 'Content-Type: application/json'  127.0.0.1:5000/user/11111

@@ -84,6 +84,7 @@ class User(Resource):
                     postTitles.append(postTitle)
             # ret = {"ID": "xyz", "DisplayName": "xyz", "CreationDate": "...", "Reputation": "...", "PostTitles": ["posttitle1", "posttitle1"]}
             ret = {"ID": ans[0][0], "DisplayName": ans[0][1], "CreationDate": str(ans[0][2]), "Reputation": ans[0][3], "PostTitles": postTitles}
+            conn.commit()
             cur.close()
             conn.close()
             return ret, 200
@@ -103,12 +104,24 @@ class User(Resource):
         print(args)
 
         # Add your code to check if the userid is already present in the database
-        exists_user = True
+        conn = psycopg2.connect("host=127.0.0.1 dbname=stackexchange user=root password=root")
+        cur = conn.cursor()
+
+        cur.execute("select id from users where id = %s;" % (userid))
+        user_ans = cur.fetchall()
+        exists_user = len(user_ans) > 0
 
         if exists_user:
             return "FAILURE -- Userid must be unique", 201
         else:
             # Add your code to insert the new tuple into the database
+            insert_sql = """insert into users (id, reputation, creationdate, displayname, views, upvotes, downvotes) 
+            values (%s, %s, %s, %s, %s, %s, %s)
+            """
+           
+            cur.execute(insert_sql,  (userid, args["reputation"], args["creationdate"], args["displayname"], 0, args["upvotes"], args["downvotes"]))
+            cur.close()
+            conn.close()
             return "SUCCESS", 201
 
     # Delete the user with the specific user id from the database

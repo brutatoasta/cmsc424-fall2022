@@ -14,14 +14,14 @@ CREATE TABLE PostTypes (
 );
 
 insert into PostTypes values 
-(1, 'Question'),
-(2, 'Answer'),
-(3, 'Orphaned tag wiki'),
-(4, 'Tag wiki excerpt'),
-(5, 'Tag wiki'),
-(6, 'Moderator nomination'),
-(7, 'Wiki placeholder'),
-(8, 'Privilege wiki');
+	(1, 'Question'),
+	(2, 'Answer'),
+	(3, 'Orphaned tag wiki'),
+	(4, 'Tag wiki excerpt'),
+	(5, 'Tag wiki'),
+	(6, 'Moderator nomination'),
+	(7, 'Wiki placeholder'),
+	(8, 'Privilege wiki');
 
 CREATE TABLE Posts (
 	Id integer NOT NULL PRIMARY KEY,
@@ -69,17 +69,17 @@ CREATE TABLE Votes (
 );
 
 insert into VoteTypes values 
-(1, 'AcceptedByOriginator'),
-(2, 'UpMod (AKA upvote)'),
-(3,  'DownMod (AKA downvote)'),
-(4, 'Offensive'),
-(5, 'Favorite'),
-(6, 'Close'),
-(7, 'Reopen'),
-(8, 'BountyStart'),
-(9, 'BountyClose'),
-(10, 'Deletion'),
-(11, 'Undeletion'),
-(12, 'Spam'),
-(15, 'ModeratorReview'),
-(16, 'ApproveEditSuggestion');
+	(1, 'AcceptedByOriginator'),
+	(2, 'UpMod (AKA upvote)'),
+	(3,  'DownMod (AKA downvote)'),
+	(4, 'Offensive'),
+	(5, 'Favorite'),
+	(6, 'Close'),
+	(7, 'Reopen'),
+	(8, 'BountyStart'),
+	(9, 'BountyClose'),
+	(10, 'Deletion'),
+	(11, 'Undeletion'),
+	(12, 'Spam'),
+	(15, 'ModeratorReview'),
+	(16, 'ApproveEditSuggestion');
