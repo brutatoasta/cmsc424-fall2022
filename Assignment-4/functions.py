@@ -8,12 +8,27 @@ def setDefaultAnswer(rdd):
     dummyrdd = rdd
 
 def task1(postsRDD):
-    return dummyrdd
-
+    res = postsRDD.filter(
+        lambda x: x.get("tags")!= None).filter(
+        lambda x: "postgresql-9.4" in x.get("tags")).map(
+        lambda x: (x.get("id"), x.get("title"), x.get("tags"))
+    )
+    return res 
+ 
 
 def task2(postsRDD):
-    return dummyrdd
-
+    def task2FlatMapper(dic):
+        res = []
+        tags = dic.get("tags").replace("<", "").replace(">", " ").split(" ")
+        tags.pop()
+        for i in tags:
+            res.append( (dic.get("id"), i)
+            )
+        return res
+    return postsRDD.filter(
+        lambda x: x.get("tags")!= None).flatMap(
+        task2FlatMapper
+    )
 def task3(postsRDD):
     return dummyrdd
 
