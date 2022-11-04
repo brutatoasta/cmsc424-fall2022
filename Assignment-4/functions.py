@@ -29,8 +29,23 @@ def task2(postsRDD):
         lambda x: x.get("tags")!= None).flatMap(
         task2FlatMapper
     )
+
 def task3(postsRDD):
-    return dummyrdd
+    def task3MapA(dic):
+        year = dic["creationdate"][:4]
+        tags = dic.get("tags").replace("<", "").replace(">", " ").split(" ")
+        tags.pop()
+        res = (year, set(tags))
+        return res
+    def task3MapB(tu):
+        x = tu[1]
+        x = list(x)
+        x.sort()
+        return (tu[0], x[:5])
+    return postsRDD.filter(
+        lambda x: x.get("tags")!= None).map(
+        task3MapA
+    ).reduceByKey(lambda v1, v2: v1 | v2).map(task3MapB)
 
 def task4(usersRDD, postsRDD):
     return dummyrdd
