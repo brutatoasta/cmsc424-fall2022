@@ -47,8 +47,28 @@ def task3(postsRDD):
         task3MapA
     ).reduceByKey(lambda v1, v2: v1 | v2).map(task3MapB)
 
+
+
+
 def task4(usersRDD, postsRDD):
-    return dummyrdd
+    def userTup(dic):
+        res = (dic["id"] , dic["displayname"])
+        return res
+    def postsTup(dic):
+        res = (dic["owneruserid"], (dic["id"], dic["title"]))
+        return res
+    def combTup(tu):
+        a = tu[0]
+        b= tu[1][0]
+        c = tu[1][1][0]
+        d = tu[1][1][1]
+        return (a, b, c, d)
+
+    rdd1 = usersRDD.map(userTup)
+    rdd2 = postsRDD.map(postsTup)
+    rdd3 = rdd1.join(rdd2)
+    return rdd3.map(combTup)
+
 
 def task5(postsRDD):
     return dummyrdd
