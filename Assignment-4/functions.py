@@ -72,16 +72,61 @@ def task4(usersRDD, postsRDD):
 
 def task5(postsRDD):
     return dummyrdd
-
-
+ 
 def task6(amazonInputRDD):
-    return dummyrdd
+    def task6mapper(line):
+        words = line.replace("user", "").replace("product", "").split(" ")
+        return (int(words[0]), int(words[1]), float(words[2]))
+
+    return amazonInputRDD.map(task6mapper)
+
+
 
 def task7(amazonInputRDD):
-    return dummyrdd
+    def task7mapA(line):
+        words = line.split()
+        return (words[0],  float(words[2]))
+    aTuple = (0,0)
+    cleaned = amazonInputRDD.map(task7mapA)
+    rdd1 = cleaned.aggregateByKey(aTuple, lambda a,b: (a[0] + b,    a[1] + 1),
+                                       lambda a,b: (a[0] + b[0], a[1] + b[1]))
+    return rdd1.mapValues(lambda v: v[0]/v[1])
 
+# First lambda expression for Within-Partition Reduction Step::
+#    a: is a TUPLE that holds: (runningSum, runningCount).
+#    b: is a SCALAR that holds the next Value
+
+#    Second lambda expression for Cross-Partition Reduction Step::
+#    a: is a TUPLE that holds: (runningSum, runningCount).
+#    b: is a TUPLE that holds: (nextPartitionsSum, nextPartitionsCount).
+# https://stackoverflow.com/questions/29930110/calculating-the-averages-for-each-key-in-a-pairwise-k-v-rdd-in-spark-with-pyth
+
+
+
+# count the number of unique tuples (product 181, 4.0) 
 def task8(amazonInputRDD):
-    return dummyrdd
+    def task8mapA(line):
+        words = line.split()
+
+        return ((words[1],  float(words[2])) ,0)
+    cleaned = amazonInputRDD.map(task8mapA)
+    rdd1 = cleaned.groupByKey()\
+    .mapValues(lambda vals: len(vals))\
+    .sortByKey()
+    # rdd1 ((name, rating), count)
+    # rdd2, mode (name, count) 
+    # rdd3 ((name, count), rating)
+    # rdd4 ((name, count), 0)
+    
+    # get mode
+    rdd2 = rdd1.map(lambda x: (x[0][0], x[1])) # contains the count of every key
+    mode = rdd2.reduceByKey(max)
+    rdd3 = rdd1.map(lambda x: ((x[0][0], x[1]), x[0][1]))
+    # rdd3 = rdd1.map(lambda x: (x[0][0], x[1]), x[0][1])
+    rdd4 = mode.map(lambda x: (x, 0))
+    res = rdd3.join(rdd4) # join on same count
+    res = res.map(lambda x: (x[0][0], x[1][0]) ).sortByKey()
+    return res
 
 def task9(logsRDD):
     return dummyrdd
