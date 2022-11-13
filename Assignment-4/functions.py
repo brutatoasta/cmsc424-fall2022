@@ -128,20 +128,58 @@ def task8(amazonInputRDD):
     res = res.map(lambda x: (x[0][0], x[1][0]) ).sortByKey()
     return res
 
+
+
+
+
 def task9(logsRDD):
-    return dummyrdd
+    def getYear(line):
+        words = line.split()
+        year = words[3][8:12]
+        return (year, 0)
+    rdd1 = logsRDD.map(getYear).groupByKey()\
+    .mapValues(lambda vals: len(vals))\
+    .sortByKey()
+    return rdd1
 
 def task10_flatmap(line):
-    return line
+    filtered = "".join((filter(lambda x: x == " " or x.isalnum(), line)))
+    return [filtered.split()]
+
+# def task10(playRDD):
+#     return playRDD.map(task10_flatmap)
+
+
+def task11_map(line):
+    filtered = "".join((filter(lambda x: x == " " or x.isalnum(), line)))
+    words = filtered.split()
+    return (words[0], (line, len(words)) )
 
 def task11(playRDD):
-    return dummyrdd
+    return playRDD.map(task11_map).filter(lambda x: x[1][1] > 10)
+
+
 
 def task12(nobelRDD):
-    return dummyrdd
+    def task12_map(dic):
+        surnames = set()
+        cat = dic["category"]
+        laureates = dic["laureates"]
+        for laur in laureates:
+            if laur["surname"] != "":
+                surnames.add(laur["surname"]) # some people dont have surnames
+        return(cat, surnames)
+    return nobelRDD.map(task12_map).reduceByKey(
+                lambda v1, v2: v1 | v2).map(lambda x: (x[0], list(x[1])))
+
 
 def task13(logsRDD, l):
-    return dummyrdd
+    def task13_mapper(line):
+        words = line.split()
+        host = words[0]
+        date = words[3][1:12]
+        return (host, date)
+    return logsRDD.map(task13_mapper).filter(lambda x: x[1] in l)
 
 def task14(logsRDD, day1, day2):
     return dummyrdd
