@@ -27,22 +27,22 @@ else:
 ## Each of the tasks requires you to write one function
 ## The code below iterates through he
 tasks = [
-    (1, task1, postsRDD),
-    (2, task2, postsRDD),
-    (3, task3, postsRDD),
-    (4, task4, (usersRDD, postsRDD)), # two inputs
-    (5, task5, postsRDD),
-    (6, task6, amazonInputRDD),
-    (7, task7, amazonInputRDD),
-    (8, task8, amazonInputRDD),
-    (9, task9, logsRDD),
-    (10, task10_flatmap, playRDD), # different format
-    (11, task11, playRDD),
-    (12, task12, nobelRDD),
+   #  (1, task1, postsRDD),
+   #  (2, task2, postsRDD),
+   #  (3, task3, postsRDD),
+   #  (4, task4, (usersRDD, postsRDD)), # two inputs
+   #  (5, task5, postsRDD),
+   #  (6, task6, amazonInputRDD),
+   #  (7, task7, amazonInputRDD),
+   #  (8, task8, amazonInputRDD),
+   #  (9, task9, logsRDD),
+   #  (10, task10_flatmap, playRDD), # different format
+   #  (11, task11, playRDD),
+   #  (12, task12, nobelRDD),
     (13, task13, logsRDD), # different format
-    (14, task14, logsRDD),
-    (15, task15, amazonBipartiteRDD),
-    (16, task16, nobelRDD),
+   #  (14, task14, logsRDD),
+   #  (15, task15, amazonBipartiteRDD),
+   #  (16, task16, nobelRDD),
 ]
 
 for task in tasks:

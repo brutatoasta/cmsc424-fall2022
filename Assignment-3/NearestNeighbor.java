@@ -21,9 +21,9 @@ public class NearestNeighbor
 		 ************/
 		addCol(conn);
 		HashMap<Integer, Integer> jaccards = getInfo(conn);
-		String update = "update users set nearest_neighbor= ? where id= ?";
+		String update = "update users set nearest_neighbor=? where id=?";
 		PreparedStatement preparedStatement = null;
-	
+		
 		try {
 			preparedStatement = conn.prepareStatement(update);
 			for (Map.Entry<Integer, Integer> entry : jaccards.entrySet()) {
@@ -39,8 +39,8 @@ public class NearestNeighbor
 			}
 			preparedStatement.executeBatch();
 			preparedStatement.close();
+			
 		} catch (SQLException e ) {
-				System.out.println("jaccards not updated!\n");
 				System.out.println(e);
 		}
 
@@ -80,7 +80,7 @@ public class NearestNeighbor
 	public static void dropCol(Connection conn){
 		Statement stmt = null;
 		String update = "alter table users " +
-						"drop column nearest_neighbor;";
+						"drop column if exists nearest_neighbor ;";
 		try {
 				stmt = conn.createStatement();
 				stmt.executeUpdate(update);
@@ -137,9 +137,6 @@ public class NearestNeighbor
 					for (String tag : tags_arr){
 						set.add(tag);
 					}
-					// for (String tag : set){
-					// 	System.out.println(tag);
-					// }
 					// add to ArrayLists
 					sets.add(set);
 					userids.add(userid);
@@ -185,9 +182,10 @@ public class NearestNeighbor
 				}
 				stmt.close();
 				
-		} catch (SQLException e ) {
-			System.out.println("getInfo: jaccards not made!\n");
-				System.out.println(e);
+		} 
+		catch (SQLException e ) {
+			
+			System.out.println(e);
 		}
 		return jaccards;
 	}
@@ -218,6 +216,6 @@ public class NearestNeighbor
 		Connection conn = connectDB();
 		dropCol(conn);
 		executeNearestNeighbor(conn);
-		check(conn);
+		//check(conn);
 	}
 }

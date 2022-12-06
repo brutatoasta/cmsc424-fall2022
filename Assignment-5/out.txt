@@ -1,0 +1,75 @@
+
+
+============ Executing Query 10
+{'_id': 'adbe', 'totalCount': 27463715}
+{'_id': 'ebay', 'totalCount': 27232371}
+{'_id': 'crm', 'totalCount': 27099929}
+{'_id': 'goog', 'totalCount': 27029894}
+{'_id': 'nvda', 'totalCount': 26108705}
+{'_id': 'amzn', 'totalCount': 25511429}
+{'_id': 'amd', 'totalCount': 25074207}
+{'_id': 'ibm', 'totalCount': 24831259}
+{'_id': 'aapl', 'totalCount': 24632151}
+{'_id': 'csco', 'totalCount': 24233156}
+
+
+============ Executing Query 11
+{'_id': 'abrown', 'totalCount': 1}
+{'_id': 'alexandra72', 'totalCount': 2}
+{'_id': 'alexsanders', 'totalCount': 2}
+{'_id': 'allenhubbard', 'totalCount': 2}
+{'_id': 'alvarezdavid', 'totalCount': 3}
+{'_id': 'amanda41', 'totalCount': 1}
+{'_id': 'amanda54', 'totalCount': 1}
+{'_id': 'amanda70', 'totalCount': 1}
+{'_id': 'amandawilliams', 'totalCount': 2}
+{'_id': 'ambercraig', 'totalCount': 1}
+
+
+============ Executing Query 12
+{'_id': ObjectId('5ca4bbc7a2dd94ee58162576'),
+ 'account_id': 154391,
+ 'products': ['Brokerage', 'Commodity', 'InvestmentStock'],
+ 'transaction_count': 4}
+{'_id': ObjectId('5ca4bbc7a2dd94ee58162720'),
+ 'account_id': 165597,
+ 'products': ['InvestmentStock', 'CurrencyService', 'Derivatives'],
+ 'transaction_count': 9}
+{'_id': ObjectId('5ca4bbc7a2dd94ee58162694'),
+ 'account_id': 171769,
+ 'products': ['Commodity', 'CurrencyService', 'InvestmentStock'],
+ 'transaction_count': 9}
+{'_id': ObjectId('5ca4bbc7a2dd94ee58162558'),
+ 'account_id': 203285,
+ 'products': ['CurrencyService', 'Brokerage', 'InvestmentStock'],
+ 'transaction_count': 9}
+{'_id': ObjectId('5ca4bbc7a2dd94ee581627ad'),
+ 'account_id': 206973,
+ 'products': ['CurrencyService', 'Brokerage', 'InvestmentStock'],
+ 'transaction_count': 10}
+{'_id': ObjectId('5ca4bbc7a2dd94ee581627b4'),
+ 'account_id': 247853,
+ 'products': ['CurrencyService', 'InvestmentStock', 'Brokerage'],
+ 'transaction_count': 3}
+{'_id': ObjectId('5ca4bbc7a2dd94ee58162708'),
+ 'account_id': 253554,
+ 'products': ['InvestmentFund', 'Derivatives', 'InvestmentStock'],
+ 'transaction_count': 1}
+{'_id': ObjectId('5ca4bbc7a2dd94ee5816261b'),
+ 'account_id': 280758,
+ 'products': ['InvestmentStock', 'Derivatives', 'InvestmentFund'],
+ 'transaction_count': 6}
+{'_id': ObjectId('5ca4bbc7a2dd94ee58162596'),
+ 'account_id': 303388,
+ 'products': ['InvestmentStock', 'InvestmentFund', 'Derivatives'],
+ 'transaction_count': 9}
+{'_id': ObjectId('5ca4bbc7a2dd94ee5816271d'),
+ 'account_id': 323373,
+ 'products': ['InvestmentFund', 'Brokerage', 'InvestmentStock'],
+ 'transaction_count': 5}
+
+
+============ Executing Query 13
+
+
+============ Executing Query 14

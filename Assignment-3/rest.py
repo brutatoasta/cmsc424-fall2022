@@ -84,12 +84,6 @@ class User(Resource):
                         """ % (userid)
         cur.execute(user_query)
         user_ans = cur.fetchall()
-        cur.execute("""select title 
-                        from posts 
-                        where owneruserid = %s
-                        """ % (userid))
-        posts_ans = cur.fetchall()
-        numPosts = len(posts_ans)
         exists_user = len(user_ans) > 0
     
         if not exists_user:
@@ -97,12 +91,18 @@ class User(Resource):
             conn.close()
             return "User not found", 404
         else:
+            cur.execute("""select title 
+                        from posts 
+                        where owneruserid = %s
+                        """ % (userid))
+            posts_ans = cur.fetchall()
+            numPosts = len(posts_ans)
             postTitles = []
             for i in range(numPosts):
                 postTitle = str(posts_ans[i][0])
                 if postTitle != "None":
                     postTitles.append(postTitle)
-            postTitle.sort()
+            postTitles.sort()
             ret = {"ID": user_ans[0][0], "DisplayName": user_ans[0][1], "CreationDate": str(user_ans[0][2]), "Reputation": user_ans[0][3], "PostTitles": postTitles}
             conn.commit()
             cur.close()

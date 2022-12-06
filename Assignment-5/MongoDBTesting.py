@@ -12,9 +12,9 @@ from queries import *
 
 client = pymongo.MongoClient("localhost", 27017)
 db = client["analytics"]
-
-for idx, q in enumerate([query0, query1, query2, query3, query4, query5, query6, query7, query8, query9, query10, query11, query12, query13, query14, query15, query16, query17]):
-    print("============ Executing Query {}".format(idx))
+# query0, query1, query2, query3, query4, query5, query6, query7, query8, query9, query10, query11,
+for idx, q in enumerate([ query10, query11, query12, query13, query14, query15, query16, query17]):
+    print("\n\n============ Executing Query {}".format(idx+10))
     results = list(q(db))
 
     for r in results[:10]:
